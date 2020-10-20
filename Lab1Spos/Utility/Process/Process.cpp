@@ -15,16 +15,17 @@ Process::~Process()
 {
     if (m_impl)
     {
+        Terminate();
         CloseHandle(m_impl->handle);
     }
 }
 
-std::shared_ptr<Process> Process::Create(const std::string& name, std::string cmd)
+std::shared_ptr<Process> Process::Create(const std::string &name, std::string cmd)
 {
     std::unique_ptr<Impl> impl = std::make_unique<Impl>();
 
-    impl->startupInfo = { 0 };
-    impl->processInfo = { 0 };
+    impl->startupInfo = {0};
+    impl->processInfo = {0};
 
     impl->startupInfo.cb = sizeof(impl->startupInfo);
 
@@ -64,14 +65,7 @@ void Process::Terminate()
     TerminateProcess(m_impl->handle, ExitCodes::PROCESS_TERMINATED);
 }
 
-int Process::GetExitCode()
-{
-    DWORD exitCode = 0;
-    GetExitCodeProcess(m_impl->handle, &exitCode);
-    return int(exitCode);
-}
-
-Process::Process(std::unique_ptr<Impl>& impl)
+Process::Process(std::unique_ptr<Impl> &impl)
 {
     m_impl.swap(impl);
 }

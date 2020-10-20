@@ -17,9 +17,6 @@ public:
     void Run();
     void Join();
     void Terminate();
-
-    int GetExitCode();
-
 private:
     std::unique_ptr<Impl> m_impl;
 };

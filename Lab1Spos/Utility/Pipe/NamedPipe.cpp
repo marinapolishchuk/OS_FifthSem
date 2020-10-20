@@ -1,10 +1,12 @@
 #include "NamedPipe.hpp"
 
 #include <Windows.h>
+#include <iostream>
 
 struct NamedPipe::Impl
 {
-    HANDLE handle;
+    HANDLE handle = INVALID_HANDLE_VALUE;
+    DWORD lastError = ERROR_SUCCESS;
 };
 
 NamedPipe::~NamedPipe()
@@ -39,6 +41,7 @@ NamedPipe& NamedPipe::operator>>(std::string& output)
     do
     {
         char buff[READ_BUFF_SIZE];
+
         if (ReadFile(
             m_impl->handle,
             buff,
@@ -49,13 +52,15 @@ NamedPipe& NamedPipe::operator>>(std::string& output)
         {
             output.append(buff, buff + nBytesRead);
         }
-        else
-        {
-            break;
-        }
-    } while (GetLastError() == ERROR_MORE_DATA);
+        m_impl->lastError = GetLastError();
+    } while (m_impl->lastError == ERROR_MORE_DATA);
 
     return *this;
+}
+
+void NamedPipe::CancelIO()
+{
+    CancelIoEx(m_impl->handle, NULL);
 }
 
 void NamedPipe::WaitForClient()
@@ -68,13 +73,23 @@ bool NamedPipe::IsValid() const
     return m_impl->handle != INVALID_HANDLE_VALUE;
 }
 
+bool NamedPipe::IsGood() const
+{
+    return m_impl->lastError == ERROR_SUCCESS;
+}
+
+void NamedPipe::Clear()
+{
+    m_impl->lastError = ERROR_SUCCESS;
+}
+
 std::shared_ptr<NamedPipe> NamedPipe::Create(const std::string& name)
 {
     std::unique_ptr<Impl> impl = std::make_unique<Impl>();
 
     impl->handle = CreateNamedPipeA(
         name.data(),
-        PIPE_ACCESS_DUPLEX,
+        PIPE_ACCESS_DUPLEX ,
         PIPE_TYPE_MESSAGE |
         PIPE_READMODE_MESSAGE |
         PIPE_WAIT,
@@ -104,14 +119,12 @@ std::shared_ptr<NamedPipe> NamedPipe::Connect(const std::string& name)
     );
 
     DWORD dwMode = PIPE_READMODE_MESSAGE | PIPE_WAIT;
-    if (!SetNamedPipeHandleState(
+    SetNamedPipeHandleState(
         impl->handle,
         &dwMode,
         NULL,
-        NULL))
-    {
-        std::exit(GetLastError());
-    }
+        NULL
+    );
 
     return std::make_shared<NamedPipe>(impl);
 }

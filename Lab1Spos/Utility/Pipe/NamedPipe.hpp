@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <chrono>
 
 class NamedPipe
 {
@@ -15,9 +16,14 @@ public:
     NamedPipe& operator<<(const std::string& input);
     NamedPipe& operator>>(std::string& output);
 
+    void CancelIO();
+
     void WaitForClient();
 
     bool IsValid() const;
+
+    bool IsGood() const;
+    void Clear();
 
 public:
     static std::shared_ptr<NamedPipe> Create(const std::string& name);

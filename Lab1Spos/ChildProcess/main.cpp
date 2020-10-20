@@ -1,4 +1,5 @@
 #include "demofuncs.hpp"
+
 #include <Utility/Pipe/NamedPipe.hpp>
 #include <Utility/ExitCode.hpp>
 
@@ -38,6 +39,10 @@ int main(int argc, char** argv)
     
     if (oss >> case_nr)
     {
+        if (case_nr >= std::size(spos::lab1::demo::op_group_traits<spos::lab1::demo::DOUBLE>::cases))
+        {
+            return ExitCodes::INVALID_CASE_NUMBER;
+        }
         switch (funcToRun)
         {
         case FUNC::F: *pipe << std::to_string(spos::lab1::demo::f_func<spos::lab1::demo::DOUBLE>(case_nr)); break;
